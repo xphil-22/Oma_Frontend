@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
+import { Icon } from "@rneui/themed";
 import {
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
   Alert,
   Pressable,
   Button,
+  FlatList,
 } from "react-native";
 
 export default function App() {
@@ -47,8 +49,25 @@ export default function App() {
   const [att_num, setatt_num] = useState(0);
   const [non_att_num, setnon_att_num] = useState(0);
   const [no_feedback, setno_feedback] = useState(0);
-  const [reload, set_reload] = useState(false);
+
   var loaded = false;
+  var local_date = new Date();
+  let date_str =
+    local_date.getFullYear() +
+    "." +
+    String(local_date.getMonth() + 1).padStart(2, "0") +
+    "." +
+    String(local_date.getDate()).padStart(2, "0");
+  const [display_date, set_display_date] = useState(date_str);
+  //const [date, set_date] = useState(new Date(local_date));
+  const date = useRef(new Date(local_date));
+  //console.log("datee: ", date)
+
+  function calc_Days(date, days) {
+    const dateCopy = new Date(date);
+    dateCopy.setDate(date.getDate() + days);
+    return dateCopy;
+  }
 
   function update_attendances(key, value) {
     setattendances((prevState) => ({
@@ -71,18 +90,65 @@ export default function App() {
     }));
   }
 
-  const get_data = async () => {
-    console.log("fetch data");
-    fetch("https://omaserver.up.railway.app/current_users")
+  const get_data = async (date_to_fetch = date.current) => {
+    //console.log(date_to_fetch);
+    var date_str =
+      date_to_fetch.getFullYear() +
+      "." +
+      String(date_to_fetch.getMonth() + 1).padStart(2, "0") +
+      "." +
+      String(date_to_fetch.getDate()).padStart(2, "0");
+    //console.log(
+    //  "fetch data",
+    //  `https://omaserver.up.railway.app/current_users/?date=${date_str}`
+    //);
+    fetch(`https://omaserver.up.railway.app/current_users/?date=${date_str}`)
       .then((response) => response.json())
       .then((json) => {
         try {
+          //console.log("fetch: ", date_to_fetch)
+          //console.log("wrong date: ", json.wrong_date, date_to_fetch)
+          if (json.wrong_date) {
+            throw new Error("date is too far in the future or in the past");
+          }
           let att_num = 0;
           let non_att_num = 0;
           let no_feedback = 0;
+          set_display_date(date_str);
+          //set_date(new Date(date_to_fetch));
+          date.current = new Date(date_to_fetch);
+          //console.log("edited date: ", date)
           json.data.forEach((elm) => {
-            console.log(elm.updated);
-            update_user_time(elm.name, elm.updated);
+            //console.log(elm.update_time);
+            var d = new Date();
+            var today =
+              String(d.getDate()).padStart(2, "0") +
+              "." +
+              String(d.getMonth() + 1).padStart(2, "0");
+            d.setDate(d.getDate() + 1);
+            var tomorrow =
+              String(d.getDate()).padStart(2, "0") +
+              "." +
+              String(d.getMonth() + 1).padStart(2, "0");
+            d.setDate(d.getDate() - 2);
+            var yesterday =
+              String(d.getDate()).padStart(2, "0") +
+              "." +
+              String(d.getMonth() + 1).padStart(2, "0");
+
+            //console.log(today, tomorrow, yesterday)
+            var date_time = "";
+            if (elm.update_date == today) {
+              date_time = `Heute `;
+            } else if (elm.update_date == yesterday) {
+              date_time = `Gestern `;
+            } else {
+              date_time = elm.update_date;
+            }
+            if (elm.name == "werner") {
+              //alert(String(elm.message) == "null")
+            }
+            update_user_time(elm.name, date_time + elm.update_time);
             update_user_texts(elm.name, elm.message);
 
             if (elm.name != "werner") {
@@ -111,13 +177,15 @@ export default function App() {
 
   useEffect(() => {
     if (!loaded) {
+      //console.log("loading: ", date)
       get_data();
       loaded = true;
     }
     try {
       setInterval(async () => {
+        //console.log("loading: ", date)
         get_data();
-      }, 30000);
+      }, 8000);
     } catch (e) {
       console.log(e);
     }
@@ -135,12 +203,39 @@ export default function App() {
 
   return (
     <View style={styles.main_container}>
+      <View style={styles.change_day_containter}>
+        <Button
+          style={styles.button_tomorrow}
+          title="gestern"
+          onPress={() => {
+            get_data(calc_Days(date.current, -1));
+          }}
+        ></Button>
+        {/*<Button
+          style={styles.button_tomorrow}
+          title="getdate"
+          onPress={() => {
+            alert(date.current);
+            //alert(user_texts.werner.to_string())
+            //alert(user_texts.werner == null)
+          }}
+        ></Button>*/}
+        <Text style={styles.current_date}>{display_date}</Text>
+        <Button
+          style={styles.button_tomorrow}
+          title="morgen"
+          onPress={() => {
+            
+            get_data(calc_Days(date.current, 1));
+          }}
+        ></Button>
+      </View>
       <View style={styles.user_attendance}>
         <View style={styles.user_attendance_left}>
           <View style={styles.user_component}>
             <Image
               style={styles.user_picture}
-              source={require("./assets/philipp.jpg")}
+              source={require("./assets/Philipp.jpg")}
             ></Image>
 
             <Text style={styles.user_text}>{user_texts.philipp}</Text>
@@ -293,11 +388,11 @@ export default function App() {
           <View style={styles.user_component}>
             <Image
               style={styles.user_picture}
-              source={require("./assets/face.png")}
+              source={require("./assets/werner.png")}
             ></Image>
 
             <Text style={styles.user_text}>{user_texts.werner}</Text>
-            {user_texts.werner != null ? (
+            {String(user_texts.werner) != "null" && String(user_texts.werner) != "" ? (
               <Text style={styles.user_update_time}>
                 {user_update_time.werner} Uhr
               </Text>
@@ -309,13 +404,13 @@ export default function App() {
       </View>
       <View style={styles.attendance_eval}>
         <Text style={styles.attendance_eval_text}>
-          {att_num} Leute kommen heute.
+          {att_num} Personen kommen heute.
         </Text>
         <Text style={styles.attendance_eval_text}>
-          {non_att_num} Leute kommen heute nicht.
+          {non_att_num} Personen kommen heute nicht.
         </Text>
         <Text style={styles.attendance_eval_text}>
-          Von {no_feedback} Leuten gibt es noch keine Rückmeldung.
+          Von {no_feedback} Personen gibt es noch keine Rückmeldung.
         </Text>
       </View>
       <StatusBar style="auto" />
@@ -333,6 +428,27 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "stretch",
     margin: "2%",
+  },
+  current_date: {
+    fontWeight: 'bold',
+    fontSize: 35,
+  },
+  change_day_containter: {
+    flex: 0.4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    //borderWidth: 5,
+    marginHorizontal: "1.5%",
+  },
+  button_yesterday: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    alignContent: "center",
+  },
+  button_tomorrow: {
+    flex: 1,
+    borderWidth: 5,
   },
   user_attendance: {
     flex: 4,
@@ -385,11 +501,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   user_update_time: {
-    flex: 1,
+    flex: 1.5,
     fontWeight: "normal",
-    fontSize: 25,
+    fontSize: 22,
     marginTop: "11%",
-    marginRight: "0.8%",
   },
   user_text: {
     // updated TIMESTAMP default NOW() ON UPDATE NOW();
