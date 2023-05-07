@@ -148,7 +148,8 @@ export default function App() {
             if (elm.name == "werner") {
               //alert(String(elm.message) == "null")
             }
-            update_user_time(elm.name, date_time + elm.update_time);
+            console.log(elm.name, date_time + elm.update_time)
+            update_user_time(elm.name, date_time + " " + elm.update_time);
             update_user_texts(elm.name, elm.message);
 
             if (elm.name != "werner") {
