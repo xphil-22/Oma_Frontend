@@ -109,10 +109,10 @@ export default function App() {
     }));
   }
 
-  Date.prototype.addHours = function(h) {
-    this.setTime(this.getTime() + (h*60*60*1000));
+  Date.prototype.addHours = function (h) {
+    this.setTime(this.getTime() + h * 60 * 60 * 1000);
     return this;
-  }
+  };
 
   const get_data = async (date_to_fetch = date.current) => {
     //console.log(date_to_fetch);
@@ -163,9 +163,9 @@ export default function App() {
             //console.log(today, tomorrow, yesterday)
             var date_time = "";
             if (elm.update_date == today) {
-              date_time = `Heute `;
+              date_time = `Heute`;
             } else if (elm.update_date == yesterday) {
-              date_time = `Gestern `;
+              date_time = `Gestern`;
             } else {
               date_time = elm.update_date;
             }
@@ -284,7 +284,7 @@ export default function App() {
           <View style={styles.user_component}>
             {
               //<user_item username='firstUser' />
-              }
+            }
 
             <Image
               style={styles.user_picture}
@@ -577,6 +577,7 @@ const styles = StyleSheet.create({
   attendance_eval: {
     flex: 1,
     flexDirection: "row",
+    marginTop: 7,
     //borderWidth: 5,
     borderColor: "black",
     backgroundColor: "#fff",
