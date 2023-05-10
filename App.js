@@ -90,6 +90,11 @@ export default function App() {
     }));
   }
 
+  Date.prototype.addHours = function(h) {
+    this.setTime(this.getTime() + (h*60*60*1000));
+    return this;
+  }
+
   const get_data = async (date_to_fetch = date.current) => {
     //console.log(date_to_fetch);
     var date_str =
@@ -119,7 +124,7 @@ export default function App() {
           date.current = new Date(date_to_fetch);
           //console.log("edited date: ", date)
           json.data.forEach((elm) => {
-            //console.log(elm.update_time);
+            console.log(elm.update_time);
             var d = new Date();
             var today =
               String(d.getDate()).padStart(2, "0") +
@@ -148,7 +153,7 @@ export default function App() {
             if (elm.name == "werner") {
               //alert(String(elm.message) == "null")
             }
-            console.log(elm.name, date_time + elm.update_time)
+            //console.log(elm.name, date_time + elm.update_time)
             update_user_time(elm.name, date_time + " " + elm.update_time);
             update_user_texts(elm.name, elm.message);
 
