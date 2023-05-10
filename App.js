@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
+// import user_item from "user_item";
+
 import { Icon } from "@rneui/themed";
 import {
   StyleSheet,
@@ -68,6 +70,23 @@ export default function App() {
     dateCopy.setDate(date.getDate() + days);
     return dateCopy;
   }
+
+  const read_pins = async () => {
+    console.log("try to read pins ...");
+    try {
+      const response = await fetch("http://localhost:5000/read_pins");
+      const json = await response.json();
+      console.log(json.pin_status);
+      if (json.pin_status == 1) {
+        get_data(calc_Days(date.current, 1));
+      } else if (json.pin_status == -1) {
+        get_data(calc_Days(date.current, -1));
+      }
+      return json.pin_status;
+    } catch (error) {
+      console.error("cannot read pins, api is maybe not available", error);
+    }
+  };
 
   function update_attendances(key, value) {
     setattendances((prevState) => ({
@@ -148,7 +167,7 @@ export default function App() {
             if (elm.name == "werner") {
               //alert(String(elm.message) == "null")
             }
-            console.log(elm.name, date_time + elm.update_time)
+            //console.log(elm.name, date_time + elm.update_time)
             update_user_time(elm.name, date_time + " " + elm.update_time);
             update_user_texts(elm.name, elm.message);
 
@@ -178,7 +197,6 @@ export default function App() {
 
   useEffect(() => {
     if (!loaded) {
-      //console.log("loading: ", date)
       get_data();
       loaded = true;
     }
@@ -190,6 +208,8 @@ export default function App() {
     } catch (e) {
       console.log(e);
     }
+
+    setInterval(read_pins, 10000);
   }, []);
 
   function bool_to_color(b) {
@@ -208,6 +228,7 @@ export default function App() {
         <Button
           style={styles.button_tomorrow}
           title="gestern"
+          color="#0000a8"
           onPress={() => {
             get_data(calc_Days(date.current, -1));
           }}
@@ -225,8 +246,8 @@ export default function App() {
         <Button
           style={styles.button_tomorrow}
           title="morgen"
+          color="#006705"
           onPress={() => {
-            
             get_data(calc_Days(date.current, 1));
           }}
         ></Button>
@@ -256,6 +277,10 @@ export default function App() {
           </View>
 
           <View style={styles.user_component}>
+            {
+              //<user_item username='firstUser' />
+              }
+
             <Image
               style={styles.user_picture}
               source={require("./assets/marie.jpg")}
@@ -393,7 +418,8 @@ export default function App() {
             ></Image>
 
             <Text style={styles.user_text}>{user_texts.werner}</Text>
-            {String(user_texts.werner) != "null" && String(user_texts.werner) != "" ? (
+            {String(user_texts.werner) != "null" &&
+            String(user_texts.werner) != "" ? (
               <Text style={styles.user_update_time}>
                 {user_update_time.werner} Uhr
               </Text>
@@ -405,13 +431,29 @@ export default function App() {
       </View>
       <View style={styles.attendance_eval}>
         <Text style={styles.attendance_eval_text}>
-          {att_num} Personen kommen heute.
+          {att_num == 1 ? (
+            <Text>{att_num} Person kommt heute.</Text>
+          ) : (
+            <Text>{att_num} Personen kommen heute.</Text>
+          )}
         </Text>
         <Text style={styles.attendance_eval_text}>
-          {non_att_num} Personen kommen heute nicht.
+          {non_att_num == 1 ? (
+            <Text>{non_att_num} Person kommt heute nicht.</Text>
+          ) : (
+            <Text>{non_att_num} Personen kommen heute nicht.</Text>
+          )}
         </Text>
         <Text style={styles.attendance_eval_text}>
-          Von {no_feedback} Personen gibt es noch keine Rückmeldung.
+          {no_feedback == 1 ? (
+            <Text>
+              Von {no_feedback} Person gibt es noch keine Rückmeldung.
+            </Text>
+          ) : (
+            <Text>
+              Von {no_feedback} Personen gibt es noch keine Rückmeldung.
+            </Text>
+          )}
         </Text>
       </View>
       <StatusBar style="auto" />
@@ -431,11 +473,11 @@ const styles = StyleSheet.create({
     margin: "2%",
   },
   current_date: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 35,
   },
   change_day_containter: {
-    flex: 0.4,
+    flex: 0.35,
     flexDirection: "row",
     justifyContent: "space-between",
     //borderWidth: 5,
@@ -448,6 +490,7 @@ const styles = StyleSheet.create({
     alignContent: "center",
   },
   button_tomorrow: {
+    backgroundColor: "#f00000",
     flex: 1,
     borderWidth: 5,
   },
