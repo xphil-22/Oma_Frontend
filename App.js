@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-// import user_item from "user_item";
+import UserComponent from "./usercomponent";
 
 import { Icon } from "@rneui/themed";
 import {
@@ -13,9 +13,23 @@ import {
   Pressable,
   Button,
   FlatList,
+  Platform
 } from "react-native";
+import { ListItem } from "@rneui/base";
 
 export default function App() {
+  let userArray = [
+    { name: "philipp", image_name: "philipp.jpg" },
+    { name: "marie", image_name: "marie.jpg" },
+    { name: "georg", image_name: "georg.jpg" },
+    { name: "karin", image_name: "karin.jpg" },
+    { name: "ida", image_name: "ida.jpg" },
+    { name: "lena", image_name: "lena02.jpg" },
+    { name: "claudi", image_name: "claudi.jpg" },
+    { name: "werner", image_name: "werner.png" },
+    ,
+  ];
+
   const [attendances, setattendances] = useState({
     philipp: -1,
     ida: -1,
@@ -24,6 +38,7 @@ export default function App() {
     georg: -1,
     karin: -1,
     claudi: -1,
+    werner: -2,
   });
 
   const [user_texts, setuser_texts] = useState({
@@ -61,9 +76,7 @@ export default function App() {
     "." +
     String(local_date.getDate()).padStart(2, "0");
   const [display_date, set_display_date] = useState(date_str);
-  //const [date, set_date] = useState(new Date(local_date));
   const date = useRef(new Date(local_date));
-  //console.log("datee: ", date)
 
   function calc_Days(date, days) {
     const dateCopy = new Date(date);
@@ -84,7 +97,7 @@ export default function App() {
       }
       return json.pin_status;
     } catch (error) {
-      console.error("cannot read pins, api is maybe not available", error);
+      console.log("cannot read pins, api is maybe not available", error);
     }
   };
 
@@ -115,23 +128,16 @@ export default function App() {
   };
 
   const get_data = async (date_to_fetch = date.current) => {
-    //console.log(date_to_fetch);
     var date_str =
       date_to_fetch.getFullYear() +
       "." +
       String(date_to_fetch.getMonth() + 1).padStart(2, "0") +
       "." +
       String(date_to_fetch.getDate()).padStart(2, "0");
-    //console.log(
-    //  "fetch data",
-    //  `https://omaserver.up.railway.app/current_users/?date=${date_str}`
-    //);
     fetch(`https://omaserver.up.railway.app/current_users/?date=${date_str}`)
       .then((response) => response.json())
       .then((json) => {
         try {
-          //console.log("fetch: ", date_to_fetch)
-          //console.log("wrong date: ", json.wrong_date, date_to_fetch)
           if (json.wrong_date) {
             throw new Error("date is too far in the future or in the past");
           }
@@ -139,11 +145,8 @@ export default function App() {
           let non_att_num = 0;
           let no_feedback = 0;
           set_display_date(date_str);
-          //set_date(new Date(date_to_fetch));
           date.current = new Date(date_to_fetch);
-          //console.log("edited date: ", date)
           json.data.forEach((elm) => {
-            console.log(elm.update_time);
             var d = new Date();
             var today =
               String(d.getDate()).padStart(2, "0") +
@@ -160,7 +163,6 @@ export default function App() {
               "." +
               String(d.getMonth() + 1).padStart(2, "0");
 
-            //console.log(today, tomorrow, yesterday)
             var date_time = "";
             if (elm.update_date == today) {
               date_time = `Heute`;
@@ -169,13 +171,12 @@ export default function App() {
             } else {
               date_time = elm.update_date;
             }
-            if (elm.name == "werner") {
-              //alert(String(elm.message) == "null")
-            }
-            //console.log(elm.name, date_time + elm.update_time)
-            update_user_time(elm.name, date_time + " " + elm.update_time);
-            update_user_texts(elm.name, elm.message);
 
+            update_user_time(elm.name, date_time + " " + elm.update_time);
+
+            if (elm.message != null) {
+              update_user_texts(elm.name, elm.message);
+            }
             if (elm.name != "werner") {
               update_attendances(elm.name, elm.attendance);
               if (elm.attendance == 1) {
@@ -207,14 +208,14 @@ export default function App() {
     }
     try {
       setInterval(async () => {
-        //console.log("loading: ", date)
         get_data();
       }, 8000);
     } catch (e) {
       console.log(e);
     }
-
-    setInterval(read_pins, 10000);
+    if (Platform.OS === "web") {
+      setInterval(read_pins, 10000);
+    }
   }, []);
 
   function bool_to_color(b) {
@@ -238,15 +239,6 @@ export default function App() {
             get_data(calc_Days(date.current, -1));
           }}
         ></Button>
-        {/*<Button
-          style={styles.button_tomorrow}
-          title="getdate"
-          onPress={() => {
-            alert(date.current);
-            //alert(user_texts.werner.to_string())
-            //alert(user_texts.werner == null)
-          }}
-        ></Button>*/}
         <Text style={styles.current_date}>{display_date}</Text>
         <Button
           style={styles.button_tomorrow}
@@ -257,181 +249,33 @@ export default function App() {
           }}
         ></Button>
       </View>
+
       <View style={styles.user_attendance}>
         <View style={styles.user_attendance_left}>
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/Philipp.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.philipp}</Text>
-            {attendances.philipp != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.philipp} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.philipp) },
-              ]}
-            ></View>
-          </View>
-
-          <View style={styles.user_component}>
-            {
-              //<user_item username='firstUser' />
-            }
-
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/marie.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.marie}</Text>
-            {attendances.marie != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.marie} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.marie) },
-              ]}
-            ></View>
-          </View>
-
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/georg.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.georg}</Text>
-            {attendances.georg != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.georg} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.georg) },
-              ]}
-            ></View>
-          </View>
-
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/karin.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.karin}</Text>
-            {attendances.karin != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.karin} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.karin) },
-              ]}
-            ></View>
-          </View>
+          {userArray.map((item, i) =>
+            i < 4 ? (
+              <UserComponent
+                username={item.name}
+                user_text={user_texts[item.name]}
+                attendance={attendances[item.name]}
+                user_update_time={user_update_time[item.name]}
+                image_name={item.image_name}
+              />
+            ) : null
+          )}
         </View>
         <View style={styles.user_attendance_right}>
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/ida.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.ida}</Text>
-            {attendances.ida != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.ida} Uhr
-              </Text>
-            ) : (
-              <></>
+          {userArray.map((item, i) =>
+            i >= 4 ? (
+              <UserComponent
+                username={item.name}
+                user_text={user_texts[item.name]}
+                attendance={attendances[item.name]}
+                user_update_time={user_update_time[item.name]}
+                image_name={item.image_name}
+              />
+            ) : null
             )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.ida) },
-              ]}
-            ></View>
-          </View>
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/lena01.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.lena}</Text>
-            {attendances.lena != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.lena} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.lena) },
-              ]}
-            ></View>
-          </View>
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/claudi.jpg")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.claudi}</Text>
-            {attendances.claudi != -1 ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.claudi} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-            <View
-              style={[
-                styles.attendance_icon,
-                { backgroundColor: bool_to_color(attendances.claudi) },
-              ]}
-            ></View>
-          </View>
-
-          <View style={styles.user_component}>
-            <Image
-              style={styles.user_picture}
-              source={require("./assets/werner.png")}
-            ></Image>
-
-            <Text style={styles.user_text}>{user_texts.werner}</Text>
-            {String(user_texts.werner) != "null" &&
-            String(user_texts.werner) != "" ? (
-              <Text style={styles.user_update_time}>
-                {user_update_time.werner} Uhr
-              </Text>
-            ) : (
-              <></>
-            )}
-          </View>
         </View>
       </View>
       <View style={styles.attendance_eval}>
