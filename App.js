@@ -69,6 +69,7 @@ export default function App() {
 
   var loaded = false;
   var local_date = new Date();
+
   let date_str =
     local_date.getFullYear() +
     "." +
@@ -76,6 +77,7 @@ export default function App() {
     "." +
     String(local_date.getDate()).padStart(2, "0");
   const [display_date, set_display_date] = useState(date_str);
+
   const date = useRef(new Date(local_date));
 
   function calc_Days(date, days) {
@@ -218,15 +220,6 @@ export default function App() {
     }
   }, []);
 
-  function bool_to_color(b) {
-    if (b == 1) {
-      return "green";
-    } else if (b == 0) {
-      return "red";
-    } else {
-      return "white";
-    }
-  }
 
   return (
     <View style={styles.main_container}>
