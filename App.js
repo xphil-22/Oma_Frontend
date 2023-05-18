@@ -13,7 +13,7 @@ import {
   Pressable,
   Button,
   FlatList,
-  Platform
+  Platform,
 } from "react-native";
 import { ListItem } from "@rneui/base";
 
@@ -136,8 +136,20 @@ export default function App() {
       String(date_to_fetch.getMonth() + 1).padStart(2, "0") +
       "." +
       String(date_to_fetch.getDate()).padStart(2, "0");
-    fetch(`https://omaserver.up.railway.app/current_users/?date=${date_str}`)
-      .then((response) => response.json())
+
+    fetch(`https://omaserver.up.railway.app/current_users/?date=${date_str}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: "ida",
+        password: "password",
+      }),
+    })
+
+    .then((response) => response.json())
       .then((json) => {
         try {
           if (json.wrong_date) {
@@ -220,7 +232,6 @@ export default function App() {
     }
   }, []);
 
-
   return (
     <View style={styles.main_container}>
       <View style={styles.change_day_containter}>
@@ -268,7 +279,7 @@ export default function App() {
                 image_name={item.image_name}
               />
             ) : null
-            )}
+          )}
         </View>
       </View>
       <View style={styles.attendance_eval}>
