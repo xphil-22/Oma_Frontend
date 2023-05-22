@@ -144,8 +144,8 @@ export default function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        name: "ida",
-        password: "password",
+        name: "philipp",
+        password: "ir4EC2nPMewD8H",
       }),
     })
 
